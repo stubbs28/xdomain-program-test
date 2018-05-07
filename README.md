@@ -7,22 +7,23 @@ This is a simple program for scanning a file against the metadefender.opswat.com
 
 This project uses [python 3](https://www.python.org/downloads).
 
-You will also need the following modules installed:
-1. Requests
+You will also need to install the [Requests](http://docs.python-requests.org/en/master/user/install/#install) module:
 ```sh
 pip install requests
 ```
 
 ## Usage example
 
-1. Navigate to the top level of the project directory
-2. Set the API key:
+Navigate to the top level of the project directory and run:
 ```sh
-python3 run.py setkey secret
+python3 run.py scan -k apikey fileToScan.txt
 ```
-3. Scan a file:
+If the file has not been scanned, it will be uploaded to metadefender for a scan.
+Scan results for the file will then be displayed.
+
+If you would like to perminatly set the API key for future use, you can run:
 ```sh
-python3 run.py scan fileToScan.txt
+python3 run.py setkey apikey
 ```
 
 For additional help run:
