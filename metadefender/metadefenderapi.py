@@ -2,6 +2,7 @@
 
 import sys
 import requests
+import json
 
 class MetaDefenderAPI:
     """A class for accessing the metadefender REST API"""
@@ -21,17 +22,20 @@ class MetaDefenderAPI:
         Arguments:
             path            -- The path of the file to upload
             filename        -- The name of files to preserve extension and 
-                               metadata during scan (default: None)
-            archivepwd      -- If submitted file is password-protected archive
-                               (default: None)
-            samplesharing   -- Only working for paid users - allow file scans
-                               to be shared or not (default: None)
+                                metadata during scan (default: None)
+            archivepwd      -- If submitted file is password-protected archive 
+                                (default: None)
+            samplesharing   -- Only working for paid users - allow file scans 
+                                to be shared or not (default: None)
             downloadfrom    -- link to download file, allow user to scan file 
-                               by link before actually downloading it 
-                               (default: None)
+                                by link before actually downloading it 
+                                (default: None)
             user_agent      -- activate workflows (default: None)
+
+        Returns:
+            The JSON response from the server.
         """
-        url = '{0}/v2/file'.format(MetaDefender.hostname)
+        url = '{0}/v2/file'.format(MetaDefenderAPI.hostname)
 
         headers = { 'apikey' : self._api_key }
         if filename is not None:
@@ -45,14 +49,11 @@ class MetaDefenderAPI:
         if user_agent is not None:
             headers['user_agent'] = user_agent
 
-        fp = open(path, "rb")
-        payload = { 'file' : iter(lambda: fp.read(1024), b"") }
-        r = requests.post(url, data=payload, headers=headers)
-        fp.close()
+        files = { 'file' : open(path, 'rb') }
+        r = requests.post(url, files=files, headers=headers)
 
         if not r.status_code == requests.codes.ok:
             sys.exit('Failed to upload file: {0}'.format(r.status_code))
-            return None
 
         return r.json()
 
@@ -63,11 +64,14 @@ class MetaDefenderAPI:
         Arguments:
             dataid          -- The data ID recieved on upload.
             file_metadata   -- Retrieve file metadata and hash_results 
-                               (default: None)
-        """
-        url = '{0}/v2/file/{1}'.format(MetaDefender.hostname, dataid)
+                                (default: None)
 
-        headers = { 'apikey' : setf._api_key }
+        Returns:
+            The JSON response from the server.
+        """
+        url = '{0}/v2/file/{1}'.format(MetaDefenderAPI.hostname, dataid)
+
+        headers = { 'apikey' : self._api_key }
         if file_metadata is not None:
             headers['file_metadata'] = file_metadata
 
@@ -75,7 +79,6 @@ class MetaDefenderAPI:
 
         if not r.status_code == requests.codes.ok:
             sys.exit('Failed to get scan report: {0}'.format(r.stats_code))
-            return None
 
         return r.json()
 
@@ -85,10 +88,13 @@ class MetaDefenderAPI:
 
         Arguments:
             hashvalue       -- The hash of a file (MD5, SHA1, SHA256)
-            file_metadata   -- Add additional information in the response, 
-                               like pe_info (default: None)
+            file_metadata   -- Add additional information in the response, like 
+                                pe_info (default: None)
+
+        Returns:
+            The JSON response from the server.
         """
-        url = '{0}/v2/hash/{1}'.format(MetaDefender.hostname, hashvalue)
+        url = '{0}/v2/hash/{1}'.format(MetaDefenderAPI.hostname, hashvalue)
 
         headers = { 'apikey' : self._api_key }
         if file_metadata is not None:
@@ -98,7 +104,6 @@ class MetaDefenderAPI:
 
         if not r.status_code == requests.codes.ok:
             sys.exit('Failed to get scan report: {0}'.format(r.status_code))
-            return None
         
         return r.json()
 
@@ -109,12 +114,21 @@ class MetaDefenderAPI:
         Arguments:
             scan    -- The JSON object containing the scan results
         """
-        print('filename: {0}'.format(scan['file_info']['display_name']))
-        print('overall_status: {0}'.format(scan['scan_results']['scan_all_result_a']))
-        for key, value in scan['scan_results']['scan_details']:
-            print()
-            print('engine: {0}'.format(key))
-            print('threat_found: {0}'.format(value['threat_found']))
-            print('scan_result: {0}'.format(value['scan_result_i']))
-            print('def_time: {0}'.format(value['def_time']))
-
+        if 'file_info' in scan and 'display_name' in scan['file_info']:
+            print('filename: {0}'.format(scan['file_info']['display_name']))
+        if 'scan_results' in scan:
+            scan_results = scan['scan_results']
+            if 'scan_all_result_a' in scan_results:
+                print('overall_status: {0}'.format(scan_results['scan_all_result_a']))
+            if 'scan_details' in scan_results:
+                print ('scan_details:')
+                for key in scan_results['scan_details'].keys():
+                    result = scan_results['scan_details'][key]
+                    print()
+                    print('engine: {0}'.format(key))
+                    threat_found = result['threat_found']
+                    if threat_found == '':
+                        threat_found = 'Clean'
+                    print('threat_found: {0}'.format(threat_found))
+                    print('scan_result: {0}'.format(result['scan_result_i']))
+                    print('def_time: {0}'.format(result['def_time']))
