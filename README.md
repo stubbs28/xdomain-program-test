@@ -1,7 +1,7 @@
 # Xdomain Program Test
 > Scans a file against OPSWAT metadefender.
 
-This is a simple program for scanning a file against the metadefender.opswat.com API.
+This is a simple program for scanning a file against the [OPSWAT MetaDefender Cloud](metadefender.opswat.com).
 
 ## Setup
 
